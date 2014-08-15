@@ -3,7 +3,7 @@ import itertools
 import time
 import networkx as nx
 
-# Formatted printing for relation matrix
+## Formatted printing for relation matrix
 def pmat(mat):
 
     for row in mat:
@@ -16,7 +16,6 @@ def pmat(mat):
             print " ",
 
         print ""
-
 
 
 ## Checks if there are any values that we can update during the process.
@@ -71,11 +70,12 @@ def iterate_matrix(right, left, rel_mat):
 
     return done
 
+
 ## Run the game until the matrix is full, if possible.
 def run_game(left, right, rel_mat):
 
     done = False
-    
+
     while done == False:
         done = iterate_matrix(right, left, rel_mat)
 
@@ -88,6 +88,29 @@ def run_game(left, right, rel_mat):
     # There are no unlabelled rows.
     return "Left"
 
+
+## If the winner is left, generate a matrix containing left's winning
+## strategy.
+## Matrix format: Populate the matrix so that each cell contains the
+##                minimum number of moves that it would take to win
+##                the game.
+## Columns: Right's position
+## Rows: Left's position
+def gen_left_strategy():
+    pass
+
+
+## If the winner is right, generate a matrix containing right's winning
+## strategy.
+## Matrix format: Any move that would cause right to lose, put in a dummy
+##                Any move that allows right to prolong the game, put in
+##                the number of moves from the game matrix.
+## Columns: Right's position
+## Rows: Left's position
+def gen_right_strategy():
+    pass
+
+
 ## Read in the graphs, allowed states, start states, and final states.
 ## Construct the game matrix from the graphs and initialize with the
 ## start states of the graph.
@@ -97,6 +120,7 @@ def main():
     left = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
     right = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
     
+    # might not actually need this
     round_summary = nx.tensor_product(left,right)
 
     # allowed moves for left and right
