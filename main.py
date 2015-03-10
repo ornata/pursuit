@@ -1,7 +1,8 @@
 import sys
 import itertools
-import time
 import networkx as nx
+import re
+
 
 ## Formatted printing for relation matrix
 def pmat(mat):
@@ -200,6 +201,76 @@ def gen_right_strategy(rel_mat):
         print row
     return strategy
 
+def read():
+    number = re.compile("[-+]?\d+")
+
+    # number of left players
+    left_players = int(sys.stdin.read(1))
+    sys.stdin.read(1)
+
+    # number of right players
+    right_players = int(sys.stdin.read(1))
+    sys.stdin.read(1)
+
+    # game graph for left
+    left_nodes = int(sys.stdin.read(1))
+    sys.stdin.read(1)
+    left = nx.DiGraph()
+    left.add_nodes_from([x for x in range(0,left_nodes)])
+
+    # Read in the graph for the left player from stdin
+    nodes_read = 0 
+
+    while nodes_read < left_nodes:
+
+        source = sys.stdin.read(1) # Get the source vertex
+
+        # We don't want to read whitespace.
+        if (source == "\n"): 
+            break
+        if (source == " "):
+            while True:
+                source = sys.stdin.read(1)
+                if re.match(number,source):
+                    break
+
+        print "Source %s" %(source)
+
+        # Read all of the vertices adjacent to the source
+        while True:
+            target = sys.stdin.read(1)
+
+            if (target == "\n"):
+                break
+
+            if(target == " "):
+                while True:
+                    target = sys.stdin.read(1)
+                    if (target == "\n"):
+                        break
+                    if re.match(number,target):
+                        break
+
+            print "Target %s" %(target)
+            # Add the edge to the graph
+            left.add_edge(int(source),int(target))
+            
+        nodes_read += 1 # Move on to the next row in the adjacency list
+
+
+
+
+    # game graph for right
+
+    # allowed moves for left
+
+    # allowed moves for right
+
+    # starting state for left
+
+    # starting state for right
+
+    # states that end the game
 
 ## Read in the graphs, allowed states, start states, and final states.
 ## Construct the game matrix from the graphs and initialize with the
@@ -207,8 +278,8 @@ def gen_right_strategy(rel_mat):
 ## Print a winning message after running the game.
 def main():
     # TODO: Number of cops, number of robbers
-
-
+    read()
+'''
     # Game input
     left = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
     right = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
@@ -241,6 +312,6 @@ def main():
     left_strategy = gen_left_strategy(relation_matrix)
     right_strategy = gen_right_strategy(relation_matrix)
     play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
-
+'''
 if __name__ == "__main__":
     main()
