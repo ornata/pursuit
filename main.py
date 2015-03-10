@@ -204,8 +204,7 @@ def gen_right_strategy(rel_mat):
 
 def read_graph(n, number):
     G = nx.DiGraph()
-
-    G.add_nodes_from([x for x in range(0,n)])
+    G.add_nodes_from([x for x in range(0, n)]) # init G with n nodes
 
     nodes_read = 0 
 
@@ -233,26 +232,39 @@ def read_digit(number):
         if(re.match(number,n)):
             return int(n)
         n = sys.stdin.read(1)
+    return -1
 
 def read_move_list(n, number):
-    moves_read = 0
+    nodes_read = 0
     move_list = []
-    while moves_read < n:
+
+    while nodes_read < n:
+
         source = read_digit(number)
+
         if source == "":
-            return
+            move_list
+            print "Ended at source"
+            print move_list
+            return move_list
+
         target = read_line(number)
+
         if target == []:
-            return
+            print "Ended at target"
+            print move_list
+            return move_list
+
         source_moves = [(source,y) for y in target]
         for move in source_moves:
             move_list.append(move)
-        moves_read += 1
+        nodes_read += 1
+    print "Ended normally"
     print move_list
     return move_list
 
 
-def read():
+def read_game():
     number = re.compile("[-+]?\d+")
     # number of left players
     left_players = read_digit(number)
@@ -264,6 +276,7 @@ def read():
     left = read_graph(left_nodes, number)
 
     right_nodes = read_digit(number)
+
     right = read_graph(right_nodes, number)
 
     allowed_left = read_move_list(left_nodes, number)
@@ -272,33 +285,26 @@ def read():
     n_final_states = read_digit(number)
     final_states = read_move_list(n_final_states, number)
 
-    # states that end the game
+    start_left = read_digit(number)
+    start_right = read_digit(number)
+
+    return [left,right,allowed_left,allowed_right,final_states,start_left,start_right]
+
 
 ## Read in the graphs, allowed states, start states, and final states.
 ## Construct the game matrix from the graphs and initialize with the
 ## start states of the graph.
 ## Print a winning message after running the game.
 def main():
-    # TODO: Number of cops, number of robbers
-    read()
-'''
-    # Game input
-    left = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
-    right = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
-
-    # allowed moves for left and right
-    # TODO: Move this to a file
-    allowed_left = [(0,0),(0,1),(1,1),(1,0),(1,2),(2,1),(2,2)]
-    allowed_right = [(0,0),(0,1),(1,1),(1,0),(1,2),(2,0),(2,1),(2,2)]
-
-    # start states of left and right
-    # TODO: Move this to a file
-    start_left = 0
-    start_right = 2
-
-    # states that will end the game
-    # TODO: Move this to a file
-    final_states = [(0,0), (1,1), (2,2)]
+    
+    game = read_game()
+    left = game[0]
+    right = game[1]
+    allowed_left = game[2]
+    allowed_right = game[3]
+    final_states = game[4]
+    start_left = game[5]
+    start_right = game[6]
 
     # Game info stored like [number of moves until win, (left_position, right_position)]
     relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, len(right))] for i in range(0, len(left))]
@@ -314,6 +320,6 @@ def main():
     left_strategy = gen_left_strategy(relation_matrix)
     right_strategy = gen_right_strategy(relation_matrix)
     play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
-'''
+
 if __name__ == "__main__":
     main()
