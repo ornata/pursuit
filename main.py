@@ -1,6 +1,7 @@
 import sys
 import itertools
 import networkx as nx
+import matplotlib.pyplot as plt
 import re
 
 
@@ -201,62 +202,53 @@ def gen_right_strategy(rel_mat):
         print row
     return strategy
 
-def read():
-    number = re.compile("[-+]?\d+")
+def read_graph(n):
+    G = nx.DiGraph()
 
-    # number of left players
-    left_players = int(sys.stdin.read(1))
-    sys.stdin.read(1)
+    G.add_nodes_from([x for x in range(0,n)])
 
-    # number of right players
-    right_players = int(sys.stdin.read(1))
-    sys.stdin.read(1)
-
-    # game graph for left
-    left_nodes = int(sys.stdin.read(1))
-    sys.stdin.read(1)
-    left = nx.DiGraph()
-    left.add_nodes_from([x for x in range(0,left_nodes)])
-
-    # Read in the graph for the left player from stdin
     nodes_read = 0 
 
-    while nodes_read < left_nodes:
+    while nodes_read < n:
+        source = read_digit()
+        target = read_line()
+        edges = [(source,y) for y in target]
+        G.add_edges_from(edges)
+        nodes_read +=1
 
-        source = sys.stdin.read(1) # Get the source vertex
+    return G
 
-        # We don't want to read whitespace.
-        if (source == "\n"): 
-            break
-        if (source == " "):
-            while True:
-                source = sys.stdin.read(1)
-                if re.match(number,source):
-                    break
+def read_line():
+    number = re.compile("[-+]?\d+")
+    line = []
+    ch = " "
+    while ch != "\n" and ch != "":
+        ch = sys.stdin.read(1)
+        if(re.match(number,ch)):
+            line.append(int(ch))
+    return line
 
-        print "Source %s" %(source)
+def read_digit():
+    number = re.compile("[-+]?\d+")
+    n = sys.stdin.read(1)
+    while n != "":
+        if(re.match(number,n)):
+            return int(n)
+        n = sys.stdin.read(1)
 
-        # Read all of the vertices adjacent to the source
-        while True:
-            target = sys.stdin.read(1)
 
-            if (target == "\n"):
-                break
+def read():
+    # number of left players
+    left_players = read_digit()
+    # number of right players
+    right_players = read_digit()
 
-            if(target == " "):
-                while True:
-                    target = sys.stdin.read(1)
-                    if (target == "\n"):
-                        break
-                    if re.match(number,target):
-                        break
-
-            print "Target %s" %(target)
-            # Add the edge to the graph
-            left.add_edge(int(source),int(target))
-            
-        nodes_read += 1 # Move on to the next row in the adjacency list
-
+    # read game graphs
+    left_nodes = read_digit()
+    left = read_graph(left_nodes)
+    right_nodes = read_digit()
+    right = read_graph(right_nodes)
+    
 
 
 
