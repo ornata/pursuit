@@ -202,7 +202,7 @@ def gen_right_strategy(rel_mat):
         print row
     return strategy
 
-def read_graph(n):
+def read_graph(n, number):
     G = nx.DiGraph()
 
     G.add_nodes_from([x for x in range(0,n)])
@@ -210,16 +210,15 @@ def read_graph(n):
     nodes_read = 0 
 
     while nodes_read < n:
-        source = read_digit()
-        target = read_line()
+        source = read_digit(number)
+        target = read_line(number)
         edges = [(source,y) for y in target]
         G.add_edges_from(edges)
         nodes_read +=1
 
     return G
 
-def read_line():
-    number = re.compile("[-+]?\d+")
+def read_line(number):
     line = []
     ch = " "
     while ch != "\n" and ch != "":
@@ -228,8 +227,7 @@ def read_line():
             line.append(int(ch))
     return line
 
-def read_digit():
-    number = re.compile("[-+]?\d+")
+def read_digit(number):
     n = sys.stdin.read(1)
     while n != "":
         if(re.match(number,n)):
@@ -238,21 +236,17 @@ def read_digit():
 
 
 def read():
+    number = re.compile("[-+]?\d+")
     # number of left players
-    left_players = read_digit()
+    left_players = read_digit(number)
     # number of right players
-    right_players = read_digit()
+    right_players = read_digit(number)
 
     # read game graphs
-    left_nodes = read_digit()
-    left = read_graph(left_nodes)
-    right_nodes = read_digit()
-    right = read_graph(right_nodes)
-    
-
-
-
-    # game graph for right
+    left_nodes = read_digit(number)
+    left = read_graph(left_nodes, number)
+    right_nodes = read_digit(number)
+    right = read_graph(right_nodes, number)
 
     # allowed moves for left
 
