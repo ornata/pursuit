@@ -212,9 +212,6 @@ def main():
     # Game input
     left = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
     right = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
-    
-    # might not actually need this
-    round_summary = nx.tensor_product(left,right)
 
     # allowed moves for left and right
     # TODO: Move this to a file
