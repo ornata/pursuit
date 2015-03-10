@@ -234,6 +234,23 @@ def read_digit(number):
             return int(n)
         n = sys.stdin.read(1)
 
+def read_move_list(n, number):
+    moves_read = 0
+    move_list = []
+    while moves_read < n:
+        source = read_digit(number)
+        if source == "":
+            return
+        target = read_line(number)
+        if target == []:
+            return
+        source_moves = [(source,y) for y in target]
+        for move in source_moves:
+            move_list.append(move)
+        moves_read += 1
+    print move_list
+    return move_list
+
 
 def read():
     number = re.compile("[-+]?\d+")
@@ -245,16 +262,12 @@ def read():
     # read game graphs
     left_nodes = read_digit(number)
     left = read_graph(left_nodes, number)
+
     right_nodes = read_digit(number)
     right = read_graph(right_nodes, number)
 
-    # allowed moves for left
-
-    # allowed moves for right
-
-    # starting state for left
-
-    # starting state for right
+    allowed_left = read_move_list(left_nodes, number)
+    allowed_right = read_move_list(left_nodes, number)
 
     # states that end the game
 
