@@ -269,6 +269,9 @@ def read():
     allowed_left = read_move_list(left_nodes, number)
     allowed_right = read_move_list(left_nodes, number)
 
+    n_final_states = read_digit(number)
+    final_states = read_move_list(n_final_states, number)
+
     # states that end the game
 
 ## Read in the graphs, allowed states, start states, and final states.
