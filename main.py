@@ -37,6 +37,7 @@ def corner(rel_mat, curr_j, curr_i, right, left):
 
     for right_vert in nbrs_j:
         for left_vert in nbrs_i:
+
             if (rel_mat[left_vert][right_vert])[0] < (rel_mat[curr_i][curr_j])[0]:
                 if prev_rel_val > rel_val + 1:
                     rel_val = rel_mat[left_vert][right_vert][0] + 1
@@ -91,13 +92,90 @@ def run_game(left, right, rel_mat):
 
 ## If the winner is left, generate a matrix containing left's winning
 ## strategy.
-## Matrix format: Populate the matrix so that each cell contains the
+## Input: - The relation matrix from the game
+## M: Populate the matrix so that each cell contains the
 ##                minimum number of moves that it would take to win
 ##                the game.
 ## Columns: Right's position
 ## Rows: Left's position
-def gen_left_strategy():
-    pass
+def gen_left_strategy(rel_mat):
+    k = len(rel_mat)
+    m = len(rel_mat[0])
+
+    strategy = [[sys.maxint for j in range(m)] for i in range(k)]
+
+    minimum = sys.maxint #this is the minimum move found so far
+
+    # for each of left's possible positions
+    # choose the position that right is in such that it is the smallest
+
+    for row in range(k):
+        for col in range(m):
+            strategy[row][col] = rel_mat[row][col][0]
+
+    print "=== Left's strategy ==="
+    for row in strategy:
+        print row
+
+    return strategy
+
+## Play the game to find the winning strategy for left/right
+## Left moves first, then right moves.
+def play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right):
+    left = start_left
+    right = start_right
+    nmoves = -1
+
+    print "\n Play the game \n"
+    print "Starting position:"
+
+    nmoves = left_strategy[left][right]
+
+    print (left,right)
+
+    print "Left's allowed moves"
+    print allowed_left
+
+    print "Right's allowed moves"
+    print allowed_right
+
+    while True:
+
+        if nmoves == sys.maxint or nmoves == 0:
+            break
+
+        best_move = left
+
+        for move in allowed_left:
+            if move[0] == left and left_strategy[move[1]][right] < left_strategy[best_move][right]:
+                    best_move = move[1]
+        
+        left = best_move
+
+        nmoves = left_strategy[left][right]
+
+        print "Left moves to %d" %(left)
+        print (left,right)
+        print "Number of moves until left can win: %d" %(nmoves)
+        print ""
+
+        if nmoves == sys.maxint or nmoves == 0:
+            break
+
+        best_move = right
+
+        for move in allowed_right:
+            if move[0] == right and right_strategy[left][move[1]] > right_strategy[left][best_move]:
+                    best_move = move[1]
+        
+        right = best_move
+        nmoves = right_strategy[left][right]
+
+        print "Right moves to %d" %(right)
+        print (left,right)
+        print "Number of moves until left can win: %d" %(nmoves)
+        print ""
+
 
 
 ## If the winner is right, generate a matrix containing right's winning
@@ -107,8 +185,20 @@ def gen_left_strategy():
 ##                the number of moves from the game matrix.
 ## Columns: Right's position
 ## Rows: Left's position
-def gen_right_strategy():
-    pass
+def gen_right_strategy(rel_mat):
+    k = len(rel_mat)
+    m = len(rel_mat[0])
+    strategy = [[-1 for j in range(m)] for i in range(k)]
+
+    for row in range(k):
+        for col in range(m):
+            if(rel_mat[row][col][0] > 0):
+                strategy[row][col] = rel_mat[row][col][0]
+
+    print "=== Right's strategy ==="
+    for row in strategy:
+        print row
+    return strategy
 
 
 ## Read in the graphs, allowed states, start states, and final states.
@@ -116,6 +206,9 @@ def gen_right_strategy():
 ## start states of the graph.
 ## Print a winning message after running the game.
 def main():
+    # TODO: Number of cops, number of robbers
+
+
     # Game input
     left = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
     right = nx.read_adjlist("left_graph.adjlist", nodetype=int, create_using=nx.DiGraph())
@@ -126,7 +219,7 @@ def main():
     # allowed moves for left and right
     # TODO: Move this to a file
     allowed_left = [(0,0),(0,1),(1,1),(1,0),(1,2),(2,1),(2,2)]
-    allowed_right = [(0,0),(0,1),(1,1),(1,0),(1,2),(2,1),(2,2)]
+    allowed_right = [(0,0),(0,1),(1,1),(1,0),(1,2),(2,0),(2,1),(2,2)]
 
     # start states of left and right
     # TODO: Move this to a file
@@ -137,6 +230,7 @@ def main():
     # TODO: Move this to a file
     final_states = [(0,0), (1,1), (2,2)]
 
+    # Game info stored like [number of moves until win, (left_position, right_position)]
     relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, len(right))] for i in range(0, len(left))]
 
     # Initialize the relation matrix.
@@ -147,6 +241,9 @@ def main():
     winner = run_game(left, right, relation_matrix)
     print "%s wins." %(winner)
     print ""
+    left_strategy = gen_left_strategy(relation_matrix)
+    right_strategy = gen_right_strategy(relation_matrix)
+    play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
 
 if __name__ == "__main__":
     main()
