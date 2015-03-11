@@ -265,7 +265,6 @@ def main():
     for state in final_states:
         l_pos = state[0]
         r_pos = state[1]
-        print ("%d, %d") %(l_pos, r_pos)
         (relation_matrix[l_pos][r_pos])[0] = 0
 
     #Run the game, record the winner.
