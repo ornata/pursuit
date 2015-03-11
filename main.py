@@ -25,6 +25,9 @@ def print_rel_mat(mat):
 
         print ""
 
+'''
+Formatted printing for strategies
+'''
 def print_strategy(strategy):
     for row in strategy:
         for x in row:
@@ -35,21 +38,31 @@ def print_strategy(strategy):
                 print x,
         print ""
 
+def find_legal_moves(allowed_moves, current_pos):
+    legal = []
+    for x in allowed_moves:
+        if x[0] == current_pos:
+            legal.append(x[1])
+    return legal
+
 '''
 Checks if there are any values that we can update during the process.
 Returns true if something was changed, false otherwise.
 '''
-def change_entry(rel_mat, curr_j, curr_i, right, left):
+def change_entry(rel_mat, curr_j, curr_i, right, left, allowed_left, allowed_right):
 
     # The current positions have already been labelled.
     if (rel_mat[curr_i][curr_j])[0] != sys.maxint:
         return False
 
     # Otherwise, check if we can label something.
-    nbrs_i = left.neighbors(curr_i)
-    nbrs_j = right.neighbors(curr_j)
+    #nbrs_i = left.neighbors(curr_i)
+    #nbrs_j = right.neighbors(curr_j)
+    nbrs_i = find_legal_moves(allowed_left, curr_i)
+    nbrs_j = find_legal_moves(allowed_right, curr_j)
 
-    li = [0]*right.out_degree(curr_j) # acts as a counter
+    #li = [0]*right.out_degree(curr_j) # acts as a counter
+    li = [0]*len(nbrs_j)
 
     count = 0 # used to index li
     rel_val = 0
@@ -79,12 +92,12 @@ def change_entry(rel_mat, curr_j, curr_i, right, left):
 Call change entry for every possible position until
 nothing can be updated.
 '''
-def update_matrix(right, left, rel_mat):
+def update_matrix(right, left, rel_mat, allowed_left, allowed_right):
     no_update = True
 
     for i in range(0, len(left)):
         for j in range(0, len(right)):
-            c = change_entry(rel_mat, j, i, right, left) 
+            c = change_entry(rel_mat, j, i, right, left, allowed_left, allowed_right) 
             if c == True:
                 # Show current state of game
                 if(SHOW_MAT == True):
@@ -102,12 +115,12 @@ Attempt to fill the relation matrix up.
 If we can remove all instances of sys.maxint, then left wins.
 Otherwise, right wins.
 '''
-def fill_matrix(left, right, rel_mat):
+def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
 
     done = False
 
     while done == False:
-        done = update_matrix(right, left, rel_mat)
+        done = update_matrix(right, left, rel_mat, allowed_left, allowed_right)
 
     # Check if there are any rows we didn't manage
     # to relabel.
@@ -268,7 +281,7 @@ def main():
         (relation_matrix[l_pos][r_pos])[0] = 0
 
     #Run the game, record the winner.
-    winner = fill_matrix(left, right, relation_matrix)
+    winner = fill_matrix(left, right, relation_matrix, allowed_left, allowed_right)
     print "\nWinner: %s \n" %(winner)
 
     left_strategy = gen_left_strategy(relation_matrix)
