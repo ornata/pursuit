@@ -37,11 +37,17 @@ Read a single digit, ignoring all other characters
 In the case of reaching EOF before completion, return -1
 '''
 def read_digit():
+    num = ""
     n = sys.stdin.read(1)
     while n != "":
         if(n.isdigit()):
-            return int(n)
-        n = sys.stdin.read(1)
+            while True:
+                num += n
+                n = sys.stdin.read(1)
+                if not(n.isdigit()):
+                    return int(num)
+        else:
+            n = sys.stdin.read(1)
     return -1
 
 '''
