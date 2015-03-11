@@ -11,7 +11,6 @@ PLAY_GAME = False
 Formatted printing for relation matrix
 '''
 def print_rel_mat(mat):
-
     for row in mat:
         for column in row:
             print " ",
@@ -51,7 +50,6 @@ right could possibly make, there is some move that left can make to get
 closer to winning.
 '''
 def change_entry(rel_mat, r, l, allowed_left, allowed_right):
-
     # The current positions have already been labelled.
     if (rel_mat[r][l])[0] != sys.maxint:
         return False
@@ -113,7 +111,6 @@ If we can remove all instances of sys.maxint, then left wins.
 Otherwise, right wins.
 '''
 def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
-
     done = False
 
     while done == False:
@@ -251,7 +248,6 @@ start states of the graph.
 Print a winning message after running the game.
 '''
 def main():
-
     game = rg.read_game()
 
     left = game[0]
