@@ -25,16 +25,27 @@ def print_rel_mat(mat):
 
         print ""
 
+def print_strategy(strategy):
+    for row in strategy:
+        for x in row:
+            print " ",
+            if x == sys.maxint:
+                print "inf",
+            else:
+                print x,
+        print ""
+
 '''
 Checks if there are any values that we can update during the process.
 Returns true if something was changed, false otherwise.
 '''
-def corner(rel_mat, curr_j, curr_i, right, left):
+def change_entry(rel_mat, curr_j, curr_i, right, left):
 
-    # If we aren't finding anything new, there's nothing to update.
+    # The current positions have already been labelled.
     if (rel_mat[curr_i][curr_j])[0] != sys.maxint:
         return False
 
+    # Otherwise, check if we can label something.
     nbrs_i = left.neighbors(curr_i)
     nbrs_j = right.neighbors(curr_j)
 
@@ -65,28 +76,25 @@ def corner(rel_mat, curr_j, curr_i, right, left):
 
 
 '''
-Check if any values in the matrix can be updated by
-checking if there is a corner.
-The game is done when there are no remaining corner
-values.
+Call change entry for every possible position until
+nothing can be updated.
 '''
 def update_matrix(right, left, rel_mat):
-    done = True
+    no_update = True
 
     for i in range(0, len(left)):
         for j in range(0, len(right)):
-            c = corner(rel_mat, j, i, right, left) 
+            c = change_entry(rel_mat, j, i, right, left) 
             if c == True:
-
                 # Show current state of game
                 if(SHOW_MAT == True):
                     print "Relation matrix"
                     print_rel_mat(rel_mat)
                     print ""
 
-                done = False
+                no_update = False
 
-    return done
+    return no_update
 
 
 '''
@@ -135,35 +143,37 @@ def gen_left_strategy(rel_mat):
 
     if SHOW_STRATEGY == True:
         print "Left's strategy"
-        for row in strategy:
-            print row
-        print ""
+        print_strategy(strategy)
     return strategy
 
 
 '''
 If the winner is right, generate a matrix containing right's winning
 strategy.
-Any move that would cause right to lose, put in a dummy
-Any move that allows right to prolong the game, put in the number of moves
-from the game matrix.
+
+Rows: position of left
+Cols: position of right
+
+Any move that would cause right to lose is labelled -1.
+Otherwise, put in the value from the relation matrix.
+
 Rows are left's position, columns are rights position.
 '''
 def gen_right_strategy(rel_mat):
     k = len(rel_mat)
     m = len(rel_mat[0])
+
     strategy = [[-1 for j in range(m)] for i in range(k)]
 
     for row in range(k):
         for col in range(m):
+            # any move with a value of 0 would make right lose
             if(rel_mat[row][col][0] > 0):
                 strategy[row][col] = rel_mat[row][col][0]
 
     if SHOW_STRATEGY == True:
         print "Right's strategy"
-        for row in strategy:
-            print row
-        print ""
+        print_strategy(strategy)
 
     return strategy
 
@@ -236,7 +246,6 @@ Print a winning message after running the game.
 '''
 def main():
 
-    io.parse()
     game = rg.read_game()
 
     left = game[0]
@@ -252,10 +261,12 @@ def main():
 
     #relation_matrix = np.full( (len(left), len(right)) , np.inf) 
     #print relation_matrix
-
     # Initialize the relation matrix.
     for state in final_states:
-        relation_matrix[state[0]][state[1]][0] = 0
+        l_pos = state[0]
+        r_pos = state[1]
+        print ("%d, %d") %(l_pos, r_pos)
+        (relation_matrix[l_pos][r_pos])[0] = 0
 
     #Run the game, record the winner.
     winner = fill_matrix(left, right, relation_matrix)
