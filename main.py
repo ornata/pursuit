@@ -20,7 +20,6 @@ def print_rel_mat(mat):
             else:
                 print column,
             print " ",
-
         print ""
 
 '''
@@ -79,7 +78,6 @@ def change_entry(rel_mat, r, l, allowed_left, allowed_right):
         i = i + 1
 
     if(all(v==1 for v in countermoves)):
-
         rel_mat[r][l] = [label, (r, l)]
         return True
     
@@ -146,9 +144,6 @@ def gen_left_strategy(rel_mat):
 
     minimum = sys.maxint #this is the minimum move found so far
 
-    # for each of left's possible positions
-    # choose the position that right is in such that it is the smallest
-
     for row in range(k):
         for col in range(m):
             strategy[row][col] = rel_mat[row][col][0]
@@ -213,7 +208,6 @@ def play_game(left_strategy, right_strategy, start_left, start_right, allowed_le
     print allowed_right
 
     while True:
-
         if nmoves == sys.maxint or nmoves == 0:
             break
 
@@ -222,7 +216,7 @@ def play_game(left_strategy, right_strategy, start_left, start_right, allowed_le
         for move in allowed_left:
             if move[0] == left and left_strategy[move[1]][right] < left_strategy[best_move][right]:
                     best_move = move[1]
-        
+
         left = best_move
 
         nmoves = left_strategy[left][right]
