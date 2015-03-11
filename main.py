@@ -3,7 +3,6 @@ import networkx as nx
 #import matplotlib.pyplot as plt
 import read_graph as rg
 import io
-import numpy as np
 
 SHOW_MAT = False
 SHOW_STRATEGY = True
@@ -49,7 +48,7 @@ def find_legal_moves(allowed_moves, current_pos):
 Checks if there are any values that we can update during the process.
 Returns true if something was changed, false otherwise.
 '''
-def change_entry(rel_mat, curr_j, curr_i, right, left, allowed_left, allowed_right):
+def change_entry(rel_mat, curr_j, curr_i, allowed_left, allowed_right):
 
     # The current positions have already been labelled.
     if (rel_mat[curr_i][curr_j])[0] != sys.maxint:
@@ -97,7 +96,7 @@ def update_matrix(right, left, rel_mat, allowed_left, allowed_right):
 
     for i in range(0, len(left)):
         for j in range(0, len(right)):
-            c = change_entry(rel_mat, j, i, right, left, allowed_left, allowed_right) 
+            c = change_entry(rel_mat, j, i, allowed_left, allowed_right) 
             if c == True:
                 # Show current state of game
                 if(SHOW_MAT == True):
@@ -272,8 +271,6 @@ def main():
     # Game info stored like [number of moves until win, (left_position, right_position)]
     relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, len(right))] for i in range(0, len(left))]
 
-    #relation_matrix = np.full( (len(left), len(right)) , np.inf) 
-    #print relation_matrix
     # Initialize the relation matrix.
     for state in final_states:
         l_pos = state[0]
