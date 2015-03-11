@@ -2,7 +2,6 @@ import sys
 import networkx as nx
 #import matplotlib.pyplot as plt
 import read_graph as rg
-import io
 
 SHOW_MAT = False
 SHOW_STRATEGY = True
