@@ -47,40 +47,41 @@ def find_legal_moves(allowed_moves, current_pos):
 '''
 Checks if there are any values that we can update during the process.
 Returns true if something was changed, false otherwise.
+
+We can update something if given the current information, for any move
+right could possibly make, there is some move that left can make to get
+closer to winning.
 '''
-def change_entry(rel_mat, curr_j, curr_i, allowed_left, allowed_right):
+def change_entry(rel_mat, r, l, allowed_left, allowed_right):
 
     # The current positions have already been labelled.
-    if (rel_mat[curr_i][curr_j])[0] != sys.maxint:
+    if (rel_mat[r][l])[0] != sys.maxint:
         return False
 
     # Otherwise, check if we can label something.
-    #nbrs_i = left.neighbors(curr_i)
-    #nbrs_j = right.neighbors(curr_j)
-    nbrs_i = find_legal_moves(allowed_left, curr_i)
-    nbrs_j = find_legal_moves(allowed_right, curr_j)
+    nbrs_r = find_legal_moves(allowed_left, r)
+    nbrs_l = find_legal_moves(allowed_right, l)
 
-    #li = [0]*right.out_degree(curr_j) # acts as a counter
-    li = [0]*len(nbrs_j)
+    countermoves = [0]*len(nbrs_r) # used as a counter
 
-    count = 0 # used to index li
-    rel_val = 0
-    prev_rel_val = sys.maxint
+    i = 0 # used to index countermoves
+    label = 0
+    prev_label = sys.maxint # assume unlabelled position
 
-    for right_vert in nbrs_j:
-        for left_vert in nbrs_i:
-
-            if (rel_mat[left_vert][right_vert])[0] < (rel_mat[curr_i][curr_j])[0]:
-                if prev_rel_val > rel_val + 1:
-                    rel_val = rel_mat[left_vert][right_vert][0] + 1
-                    prev_rel_val = rel_val
-                li[count] = 1
+    for rpos in nbrs_r:
+        for lpos in nbrs_r:
+            # can we find an lpos that counters rpos?
+            if (rel_mat[lpos][rpos])[0] < (rel_mat[r][l])[0]:
+                if prev_label > label + 1:
+                    label = rel_mat[lpos][rpos][0] + 1
+                    prev_label = label
+                countermoves[i] = 1
                 break
-        count = count + 1
+        i = i + 1
 
-    if(all(v==1 for v in li)):
+    if(all(v==1 for v in countermoves)):
 
-        rel_mat[curr_i][curr_j] = [rel_val, (curr_i, curr_j)]
+        rel_mat[r][l] = [label, (r, l)]
         return True
     
     else:
