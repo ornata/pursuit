@@ -1,0 +1,38 @@
+# number of left players
+1
+# number of right players
+1
+
+# left's graph -- start with number of vertices
+# after that it's an adjacency list
+3
+0 0 1 2
+1 0 1 2
+2 0 1 2
+
+# right's graph
+3
+0 0 1 2
+1 0 1 2
+2 0 1 2
+
+# allowed moves for left (adjacency list)
+0 0 1 2
+1 0 1 2
+2 0 1 2
+
+# allowed moves for right
+0 0 1 2
+1 0 1 2
+2 0 1 2
+
+# final states
+3
+0 0
+1 1
+2 2
+
+# starting position of left
+0
+# starting position of right
+2
