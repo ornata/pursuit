@@ -1,11 +1,18 @@
 import sys
 import networkx as nx
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import read_graph as rg
+import io
+import numpy as np
 
+SHOW_MAT = False
+SHOW_STRATEGY = True
+PLAY_GAME = False
 
-## Formatted printing for relation matrix
-def pmat(mat):
+'''
+Formatted printing for relation matrix
+'''
+def print_rel_mat(mat):
 
     for row in mat:
         for column in row:
@@ -18,9 +25,10 @@ def pmat(mat):
 
         print ""
 
-
-## Checks if there are any values that we can update during the process.
-## Returns true if something was changed, false otherwise.
+'''
+Checks if there are any values that we can update during the process.
+Returns true if something was changed, false otherwise.
+'''
 def corner(rel_mat, curr_j, curr_i, right, left):
 
     # If we aren't finding anything new, there's nothing to update.
@@ -56,34 +64,47 @@ def corner(rel_mat, curr_j, curr_i, right, left):
         return False
 
 
-## Check if any values in the matrix can be updated.
-def iterate_matrix(right, left, rel_mat):
+'''
+Check if any values in the matrix can be updated by
+checking if there is a corner.
+The game is done when there are no remaining corner
+values.
+'''
+def update_matrix(right, left, rel_mat):
     done = True
 
     for i in range(0, len(left)):
         for j in range(0, len(right)):
-            c = corner(rel_mat, j, i, right, left)
+            c = corner(rel_mat, j, i, right, left) 
             if c == True:
-                print "Relation matrix"
-                pmat(rel_mat)
-                print ""
-                #time.sleep(1)
+
+                # Show current state of game
+                if(SHOW_MAT == True):
+                    print "Relation matrix"
+                    print_rel_mat(rel_mat)
+                    print ""
+
                 done = False
 
     return done
 
 
-## Run the game until the matrix is full, if possible.
-def run_game(left, right, rel_mat):
+'''
+Attempt to fill the relation matrix up.
+If we can remove all instances of sys.maxint, then left wins.
+Otherwise, right wins.
+'''
+def fill_matrix(left, right, rel_mat):
 
     done = False
 
     while done == False:
-        done = iterate_matrix(right, left, rel_mat)
+        done = update_matrix(right, left, rel_mat)
 
+    # Check if there are any rows we didn't manage
+    # to relabel.
     for row in rel_mat:
         for i in row:
-        # There is an unlabelled row.
             if sys.maxint in i:
                 return "Right"
 
@@ -91,14 +112,12 @@ def run_game(left, right, rel_mat):
     return "Left"
 
 
-## If the winner is left, generate a matrix containing left's winning
-## strategy.
-## Input: - The relation matrix from the game
-## M: Populate the matrix so that each cell contains the
-##                minimum number of moves that it would take to win
-##                the game.
-## Columns: Right's position
-## Rows: Left's position
+'''
+Generate the strategy that left will follow if we play the game.
+This is all of the values from the relation matrix with rows
+representing the position of left and columns representing the
+position of right.
+'''
 def gen_left_strategy(rel_mat):
     k = len(rel_mat)
     m = len(rel_mat[0])
@@ -114,14 +133,45 @@ def gen_left_strategy(rel_mat):
         for col in range(m):
             strategy[row][col] = rel_mat[row][col][0]
 
-    print "=== Left's strategy ==="
-    for row in strategy:
-        print row
+    if SHOW_STRATEGY == True:
+        print "Left's strategy"
+        for row in strategy:
+            print row
+        print ""
+    return strategy
+
+
+'''
+If the winner is right, generate a matrix containing right's winning
+strategy.
+Any move that would cause right to lose, put in a dummy
+Any move that allows right to prolong the game, put in the number of moves
+from the game matrix.
+Rows are left's position, columns are rights position.
+'''
+def gen_right_strategy(rel_mat):
+    k = len(rel_mat)
+    m = len(rel_mat[0])
+    strategy = [[-1 for j in range(m)] for i in range(k)]
+
+    for row in range(k):
+        for col in range(m):
+            if(rel_mat[row][col][0] > 0):
+                strategy[row][col] = rel_mat[row][col][0]
+
+    if SHOW_STRATEGY == True:
+        print "Right's strategy"
+        for row in strategy:
+            print row
+        print ""
 
     return strategy
 
-## Play the game to find the winning strategy for left/right
-## Left moves first, then right moves.
+
+'''
+Play the game to find the winning strategy for left/right
+Left moves first, then right moves.
+'''
 def play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right):
     left = start_left
     right = start_right
@@ -178,37 +228,17 @@ def play_game(left_strategy, right_strategy, start_left, start_right, allowed_le
         print ""
 
 
-
-## If the winner is right, generate a matrix containing right's winning
-## strategy.
-## Matrix format: Any move that would cause right to lose, put in a dummy
-##                Any move that allows right to prolong the game, put in
-##                the number of moves from the game matrix.
-## Columns: Right's position
-## Rows: Left's position
-def gen_right_strategy(rel_mat):
-    k = len(rel_mat)
-    m = len(rel_mat[0])
-    strategy = [[-1 for j in range(m)] for i in range(k)]
-
-    for row in range(k):
-        for col in range(m):
-            if(rel_mat[row][col][0] > 0):
-                strategy[row][col] = rel_mat[row][col][0]
-
-    print "=== Right's strategy ==="
-    for row in strategy:
-        print row
-    return strategy
-
-
-## Read in the graphs, allowed states, start states, and final states.
-## Construct the game matrix from the graphs and initialize with the
-## start states of the graph.
-## Print a winning message after running the game.
+'''
+Read in the graphs, allowed states, start states, and final states.
+Construct the game matrix from the graphs and initialize with the
+start states of the graph.
+Print a winning message after running the game.
+'''
 def main():
 
+    io.parse()
     game = rg.read_game()
+
     left = game[0]
     right = game[1]
     allowed_left = game[2]
@@ -220,17 +250,23 @@ def main():
     # Game info stored like [number of moves until win, (left_position, right_position)]
     relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, len(right))] for i in range(0, len(left))]
 
+    #relation_matrix = np.full( (len(left), len(right)) , np.inf) 
+    #print relation_matrix
+
     # Initialize the relation matrix.
     for state in final_states:
         relation_matrix[state[0]][state[1]][0] = 0
 
     #Run the game, record the winner.
-    winner = run_game(left, right, relation_matrix)
-    print "%s wins." %(winner)
-    print ""
+    winner = fill_matrix(left, right, relation_matrix)
+    print "\nWinner: %s \n" %(winner)
+
     left_strategy = gen_left_strategy(relation_matrix)
     right_strategy = gen_right_strategy(relation_matrix)
-    play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
+
+    if PLAY_GAME == True:
+        play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
+
 
 if __name__ == "__main__":
     main()

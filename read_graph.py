@@ -1,23 +1,28 @@
 import sys
 import networkx as nx
 
-## Reads in a digraph from stdin and returns it
+'''
+Reads in a digraph from stdin and returns it
+input format is networkx format adjacency list
+'''
 def read_graph(n):
     G = nx.DiGraph()
     G.add_nodes_from([x for x in range(0, n)]) # init G with n nodes
 
     nodes_read = 0 
 
+    # get the source node and then read the adjacent nodes
     while nodes_read < n:
         source = read_digit()
         target = read_line()
         edges = [(source,y) for y in target]
         G.add_edges_from(edges)
         nodes_read +=1
-
     return G
 
-## Read until reaching \n from the current position in the stdin buffer
+'''
+Read until reaching \n from the current position in the stdin buffer
+'''
 def read_line():
     line = []
     ch = " "
@@ -27,8 +32,10 @@ def read_line():
             line.append(int(ch))
     return line
 
-## Read a single digit, ignoring all other characters
-## In the case of reaching EOF before completion, return -1
+'''
+Read a single digit, ignoring all other characters
+In the case of reaching EOF before completion, return -1
+'''
 def read_digit():
     n = sys.stdin.read(1)
     while n != "":
@@ -37,7 +44,9 @@ def read_digit():
         n = sys.stdin.read(1)
     return -1
 
-## Reads in a list of moves as tuples
+'''
+Reads in a list of moves as tuples
+'''
 def read_move_list(n):
     nodes_read = 0
     move_list = []
@@ -66,8 +75,10 @@ def read_move_list(n):
 
     return move_list
 
-## Reads in everything necessary to play the game and returns
-## it all in a list
+'''
+Reads in everything necessary to play the game and returns a
+list.
+'''
 def read_game():
 
     # number of players
