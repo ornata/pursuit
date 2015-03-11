@@ -58,11 +58,10 @@ def read_move_list(n):
     move_list = []
 
     while nodes_read < n:
-
         # Get the vertex you start at
         source = read_digit()
 
-        # Hit EOF, return because we're done
+        # Hit EOF
         if source == "":
             move_list
             return move_list
@@ -86,11 +85,6 @@ Reads in everything necessary to play the game and returns a
 list.
 '''
 def read_game():
-
-    # number of players
-    left_players = read_digit()
-    right_players = read_digit()
-
     # read game graphs
     left_nodes = read_digit()
     left = read_graph(left_nodes)
@@ -106,8 +100,4 @@ def read_game():
     n_final_states = read_digit()
     final_states = read_move_list(n_final_states)
 
-    # read starting positions
-    start_left = read_digit()
-    start_right = read_digit()
-
-    return [left,right,allowed_left,allowed_right,final_states,start_left,start_right]
+    return [left,right,allowed_left,allowed_right,final_states]
