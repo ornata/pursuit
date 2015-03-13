@@ -10,9 +10,9 @@ def read_graph(n):
     G.add_nodes_from([x for x in range(0, n)]) # init G with n nodes
 
     for i in range(0, n):
-        row = sys.stdin.readline().splitlines()
-        verts = row[0].split()
-        verts = map(int,verts)
+        row = sys.stdin.readline() # read in the row as a list
+        verts = row.split() # split on whitespace
+        verts = map(int,verts) 
         edges = [(int(verts[0]),int(y)) for y in verts[1:]]
         G.add_edges_from(edges)
     return G
@@ -24,7 +24,7 @@ In the case of reaching EOF before completion, return -1
 def read_digit():
     num = ""
     n = sys.stdin.read(1)
-    while n != "":
+    while n != "": # read until EOF
         if(n.isdigit()):
             while True:
                 num += n

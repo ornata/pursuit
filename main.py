@@ -3,7 +3,7 @@ import networkx as nx
 #import matplotlib.pyplot as plt
 import read_graph as rg
 
-SHOW_MAT = False
+SHOW_MAT = True
 SHOW_STRATEGY = True
 PLAY_GAME = False
 
@@ -57,8 +57,8 @@ def change_entry(rel_mat, r, l, allowed_left, allowed_right):
         return False
 
     # Otherwise, check if we can label something.
-    nbrs_r = find_legal_moves(allowed_left, r)
-    nbrs_l = find_legal_moves(allowed_right, l)
+    nbrs_r = find_legal_moves(allowed_right, r)
+    nbrs_l = find_legal_moves(allowed_left, l)
 
     countermoves = [0]*len(nbrs_r) # used as a counter
 
@@ -295,7 +295,7 @@ def main():
             play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
 
         game = []
-        
+
 
 if __name__ == "__main__":
     main()
