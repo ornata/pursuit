@@ -55,30 +55,6 @@ def read_move_list(n):
         i += 1
 
     return move_list
-'''
-    while nodes_read < n:
-
-        # Get the vertex you start at
-        source = read_digit()
-
-        # Hit EOF, return because we're done
-        if source == "":
-            move_list
-            return move_list
-
-        # Get the list of vertices the source can go to
-        target = read_line()
-
-        # If there's nothing, then return an empty list
-        if target == []:
-            return move_list
-
-        # Make the list of legal moves and append it to the move list
-        source_moves = [(source,y) for y in target]
-        move_list.extend(source_moves)
-        nodes_read += 1
-
-    return move_list '''
 
 '''
 Reads in everything necessary to play the game and returns a
