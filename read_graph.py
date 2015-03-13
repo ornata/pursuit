@@ -9,28 +9,13 @@ def read_graph(n):
     G = nx.DiGraph()
     G.add_nodes_from([x for x in range(0, n)]) # init G with n nodes
 
-    nodes_read = 0 
-
-    # get the source node and then read the adjacent nodes
-    while nodes_read < n:
-        source = read_digit()
-        target = read_line()
-        edges = [(source,y) for y in target]
+    for i in range(0, n):
+        row = sys.stdin.readline().splitlines()
+        verts = row[0].split()
+        verts = map(int,verts)
+        edges = [(int(verts[0]),int(y)) for y in verts[1:]]
         G.add_edges_from(edges)
-        nodes_read +=1
     return G
-
-'''
-Read until reaching \n from the current position in the stdin buffer
-'''
-def read_line():
-    line = []
-    ch = " "
-    while ch != "\n" and ch != "":
-        ch = sys.stdin.read(1)
-        if(ch.isdigit()):
-            line.append(int(ch))
-    return line
 
 '''
 Read a single digit, ignoring all other characters
@@ -56,12 +41,27 @@ Reads in a list of moves as tuples
 def read_move_list(n):
     nodes_read = 0
     move_list = []
+    i = 0
+    while True:
+        if i == n:
+            break
+        row = sys.stdin.readline().splitlines()
+        if row == ['']:
+            continue
+        verts = row[0].split()
+        verts = map(int,verts)
+        moves = [(verts[0],y) for y in verts[1:]]
+        move_list.extend(moves)
+        i += 1
 
+    return move_list
+'''
     while nodes_read < n:
+
         # Get the vertex you start at
         source = read_digit()
 
-        # Hit EOF
+        # Hit EOF, return because we're done
         if source == "":
             move_list
             return move_list
@@ -69,7 +69,7 @@ def read_move_list(n):
         # Get the list of vertices the source can go to
         target = read_line()
 
-        # If there's nothing, then just return an empty list
+        # If there's nothing, then return an empty list
         if target == []:
             return move_list
 
@@ -78,26 +78,57 @@ def read_move_list(n):
         move_list.extend(source_moves)
         nodes_read += 1
 
-    return move_list
+    return move_list '''
 
 '''
 Reads in everything necessary to play the game and returns a
 list.
 '''
 def read_game():
+
     # read game graphs
     left_nodes = read_digit()
+    if left_nodes == -1:
+        return None
+
     left = read_graph(left_nodes)
+    if left == None:
+        return None
 
     right_nodes = read_digit()
+    if right_nodes == -1:
+        return None
+
     right = read_graph(right_nodes)
+    if right == None:
+        return None
 
     # read allowed moves
     allowed_left = read_move_list(left_nodes)
+    if allowed_left == []:
+        return None
+
     allowed_right = read_move_list(left_nodes)
+    if allowed_right == []:
+        return None
 
     # read final states
     n_final_states = read_digit()
-    final_states = read_move_list(n_final_states)
+    if n_final_states == -1:
+        return None
 
-    return [left,right,allowed_left,allowed_right,final_states]
+    final_states = read_move_list(n_final_states)
+    if final_states == []:
+        return None
+
+    # read starting positions
+    start_left = read_digit()
+    if start_left == -1:
+        return None
+
+    start_right = read_digit()
+    if start_right == -1:
+        return None
+
+    # successfully read a game, return the entire list
+    return [left,right,allowed_left,allowed_right,final_states,start_left,start_right]

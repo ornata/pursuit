@@ -32,7 +32,7 @@ def print_strategy(strategy):
             if x == sys.maxint:
                 print "inf",
             else:
-                print x,
+                print "%3d" %(x),
         print ""
 
 def find_legal_moves(allowed_moves, current_pos):
@@ -67,7 +67,7 @@ def change_entry(rel_mat, r, l, allowed_left, allowed_right):
     prev_label = sys.maxint # assume unlabelled position
 
     for rpos in nbrs_r:
-        for lpos in nbrs_r:
+        for lpos in nbrs_l:
             # can we find an lpos that counters rpos?
             if (rel_mat[lpos][rpos])[0] < (rel_mat[r][l])[0]:
                 if prev_label > label + 1:
@@ -245,6 +245,20 @@ def play_game(left_strategy, right_strategy, start_left, start_right, allowed_le
 
 
 '''
+Initialize the relation matrix for the game and return it.
+'''
+def init_relation_matrix(left, right, final_states):
+    # Game info stored like [number of moves until win, (left_position, right_position)]
+    relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, right)] for i in range(0, left)]
+
+    # Initialize the relation matrix.
+    for state in final_states:
+        l_pos = state[0]
+        r_pos = state[1]
+        (relation_matrix[l_pos][r_pos])[0] = 0
+    return relation_matrix
+
+'''
 Read in the graphs, allowed states, start states, and final states.
 Construct the game matrix from the graphs and initialize with the
 start states of the graph.
@@ -252,35 +266,36 @@ Print a winning message after running the game.
 '''
 def main():
 
-    game = rg.read_game()
+    while True:
+        game = rg.read_game()
 
-    left = game[0]
-    right = game[1]
-    allowed_left = game[2]
-    allowed_right = game[3]
-    final_states = game[4]
-    start_left = game[5]
-    start_right = game[6]
+        if game == None:
+            break
 
-    # Game info stored like [number of moves until win, (left_position, right_position)]
-    relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, len(right))] for i in range(0, len(left))]
+        left = game[0]
+        right = game[1]
+        allowed_left = game[2]
+        allowed_right = game[3]
+        final_states = game[4]
+        start_left = game[5]
+        start_right = game[6]
 
-    # Initialize the relation matrix.
-    for state in final_states:
-        l_pos = state[0]
-        r_pos = state[1]
-        (relation_matrix[l_pos][r_pos])[0] = 0
+        relation_matrix = init_relation_matrix(len(left), len(right), final_states)
 
-    #Run the game, record the winner.
-    winner = fill_matrix(left, right, relation_matrix, allowed_left, allowed_right)
-    print "\nWinner: %s \n" %(winner)
+        # Run the game, record the winner.
+        winner = fill_matrix(left, right, relation_matrix, allowed_left, allowed_right)
+        print "\nWinner: %s \n" %(winner)
 
-    left_strategy = gen_left_strategy(relation_matrix)
-    right_strategy = gen_right_strategy(relation_matrix)
+        # Find the strategies that left and right will try and follow to win the game
+        left_strategy = gen_left_strategy(relation_matrix)
+        right_strategy = gen_right_strategy(relation_matrix)
 
-    if PLAY_GAME == True:
-        play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
+        # If the flag is set, show how left (or right) would win the game given start_left and start_right
+        if PLAY_GAME == True:
+            play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
 
+        game = []
+        break
 
 if __name__ == "__main__":
     main()
