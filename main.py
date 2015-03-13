@@ -295,7 +295,7 @@ def main():
             play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
 
         game = []
-        break
+        
 
 if __name__ == "__main__":
     main()
