@@ -3,11 +3,13 @@ import networkx as nx
 #import matplotlib.pyplot as plt
 import read_graph as rg
 
-SHOW_MAT = True
+SHOW_MAT = False
 SHOW_STRATEGY = True
 PLAY_GAME = False
 
 '''
+print_rel_mat
+-----------------------------------------------------------------------------
 Formatted printing for relation matrix
 '''
 def print_rel_mat(mat):
@@ -16,13 +18,15 @@ def print_rel_mat(mat):
         for column in row:
             print " ",
             if column[0] == sys.maxint:
-                print "-",
+                print "----------",
             else:
                 print column,
             print " ",
         print ""
 
 '''
+print_strategy
+-----------------------------------------------------------------------------
 Formatted printing for strategies
 '''
 def print_strategy(strategy):
@@ -35,6 +39,12 @@ def print_strategy(strategy):
                 print "%3d" %(x),
         print ""
 
+'''
+find_legal_moves
+-----------------------------------------------------------------------------
+Returns a list of all of the positions current_pos can move to given a list of tuples (x,y).
+If x = current_pos, then append y to the list.
+'''
 def find_legal_moves(allowed_moves, current_pos):
     legal = []
     for x in allowed_moves:
@@ -43,42 +53,54 @@ def find_legal_moves(allowed_moves, current_pos):
     return legal
 
 '''
-Checks if there are any values that we can update during the process.
-Returns true if something was changed, false otherwise.
+relabel
+-----------------------------------------------------------------------------
+Check if there is a way for the left player to get closer to winning the game
+given any of the moves the right player could make from its current position.
 
-We can update something if given the current information, for any move
-right could possibly make, there is some move that left can make to get
-closer to winning.
+Given the current position (left, right)
+For any legal move the right player could make, check if there is a left move
+that has a smaller label than (left,right) in the relation matrix.If there is,
+then left can walk through that spot in one step, so it may be possible for it
+to shorten the game. If it is possible to do that for every single move the right
+player can make, then no matter what, left can do better so we can update its label.
+We choose the smallest possible label out of each "better" play left could make.
+
+If it is not possible for left to shorten the game no matter what right does, we
+can't say anything about a guaranteed better strategy and so we can't update anything.
+
+Returns True if the position (left, right) was relabeled, False otherwise.
 '''
-def change_entry(rel_mat, r, l, allowed_left, allowed_right):
+def relabel(rel_mat, l, r, allowed_left, allowed_right):
 
-    # The current positions have already been labelled.
-    if (rel_mat[r][l])[0] != sys.maxint:
+    # The current positions have already been labelled, so nothing can be updated.
+    if (rel_mat[l][r])[0] != sys.maxint:
         return False
 
-    # Otherwise, check if we can label something.
+    # Otherwise, look at all of the legal moves for left and right
     nbrs_r = find_legal_moves(allowed_right, r)
     nbrs_l = find_legal_moves(allowed_left, l)
 
-    countermoves = [0]*len(nbrs_r) # used as a counter
+    # Set the i-th entry to true only if there is a move left can make to shorten the game.
+    was_countered = [False]*len(nbrs_r)
+    i = 0
 
-    i = 0 # used to index countermoves
-    label = 0
-    prev_label = sys.maxint # assume unlabelled position
+    label = rel_mat[l][r][0]
+    prev_label = sys.maxint
+    candidate_labels = [] # Candidates for relabeling
 
-    for rpos in nbrs_r:
-        for lpos in nbrs_l:
-            # can we find an lpos that counters rpos?
-            if (rel_mat[lpos][rpos])[0] < (rel_mat[r][l])[0]:
-                if prev_label > label + 1:
-                    label = rel_mat[lpos][rpos][0] + 1
-                    prev_label = label
-                countermoves[i] = 1
+    # Try to update the current position using its neighbours.
+    for rmove in nbrs_r:
+        for lmove in nbrs_l:
+            move_label = rel_mat[lmove][rmove][0]
+            if move_label < label: # We were able to reach this state in fewer moves than the current one
+                candidate_labels.append(move_label+1)
+                was_countered[i] = True
                 break
-        i = i + 1
+        i += 1
 
-    if(all(v==1 for v in countermoves)):
-        rel_mat[r][l] = [label, (r, l)]
+    if(all(move == True for move in was_countered)):
+        rel_mat[l][r] = [min(candidate_labels), (l, r)]
         return True
     
     else:
@@ -86,43 +108,51 @@ def change_entry(rel_mat, r, l, allowed_left, allowed_right):
 
 
 '''
-Call change entry for every possible position until
-nothing can be updated.
+update_matrix
+-----------------------------------------------------------------------------
+Call change entry for every possible position until nothing can be updated.
+Once nothing can be updated, it isn't possible for Left to shorten the game
+so we are done.
+
+Returns True when nothing was updated at this step, and False otherwise.
 '''
 def update_matrix(right, left, rel_mat, allowed_left, allowed_right):
-    no_update = True
+
+    done = True
 
     for i in range(0, len(left)):
         for j in range(0, len(right)):
-            c = change_entry(rel_mat, j, i, allowed_left, allowed_right) 
-            if c == True:
+            updated_entry = relabel(rel_mat, i, j, allowed_left, allowed_right) 
+            if updated_entry == True:
                 # Show current state of game
                 if(SHOW_MAT == True):
-                    print "Relation matrix"
+                    print "Updated an entry"
                     print_rel_mat(rel_mat)
                     print ""
 
-                no_update = False
-
-    return no_update
+                done = False
+    return done
 
 
 '''
-Attempt to fill the relation matrix up.
-If we can remove all instances of sys.maxint, then left wins.
-Otherwise, right wins.
+fill_matrix
+-----------------------------------------------------------------------------
+Calls update_matrix until it returns done = True. At this point, nothing
+was updated so the game is over. After, it checks whether or not
+the relation matrix was filled up. If it wasn't, then Right won. Otherwise,
+left won.
+
+Returns a string stating the winner of the game.
 '''
 def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
 
     done = False
-
     while done == False:
         done = update_matrix(right, left, rel_mat, allowed_left, allowed_right)
 
-    # Check if there are any rows we didn't manage
-    # to relabel.
     for row in rel_mat:
         for i in row:
+            # We failed to fill the matrix so right wins
             if sys.maxint in i:
                 return "Right"
 
@@ -131,6 +161,8 @@ def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
 
 
 '''
+gen_left_strategy
+-----------------------------------------------------------------------------
 Generate the strategy that left will follow if we play the game.
 This is all of the values from the relation matrix with rows
 representing the position of left and columns representing the
@@ -155,6 +187,8 @@ def gen_left_strategy(rel_mat):
 
 
 '''
+gen_right_strategy
+-----------------------------------------------------------------------------
 If the winner is right, generate a matrix containing right's winning
 strategy.
 
@@ -186,6 +220,8 @@ def gen_right_strategy(rel_mat):
 
 
 '''
+play_game
+-----------------------------------------------------------------------------
 Play the game to find the winning strategy for left/right
 Left moves first, then right moves.
 '''
@@ -245,6 +281,8 @@ def play_game(left_strategy, right_strategy, start_left, start_right, allowed_le
 
 
 '''
+init_relation_matrix
+-----------------------------------------------------------------------------
 Initialize the relation matrix for the game and return it.
 '''
 def init_relation_matrix(left, right, final_states):
@@ -259,6 +297,8 @@ def init_relation_matrix(left, right, final_states):
     return relation_matrix
 
 '''
+main
+-----------------------------------------------------------------------------
 Read in the graphs, allowed states, start states, and final states.
 Construct the game matrix from the graphs and initialize with the
 start states of the graph.
