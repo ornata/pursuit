@@ -7,12 +7,11 @@ input format is networkx format adjacency list
 '''
 def read_graph(n):
     G = nx.DiGraph()
-    G.add_nodes_from([x for x in range(0, n)]) # init G with n nodes
+    G.add_nodes_from([x for x in xrange(0, n)]) # init G with n nodes
 
-    for i in range(0, n):
+    for i in xrange(0, n):
         row = sys.stdin.readline() # read in the row as a list
-        verts = row.split() # split on whitespace
-        verts = map(int,verts) 
+        verts = map(int,row.split()) 
         edges = [(int(verts[0]),int(y)) for y in verts[1:]]
         G.add_edges_from(edges)
     return G
@@ -41,6 +40,7 @@ Reads in a list of moves as tuples
 def read_move_list(n):
     nodes_read = 0
     move_list = []
+    append = move_list.append # avoid call to append
     i = 0
     while True:
         if i == n:
@@ -48,10 +48,7 @@ def read_move_list(n):
         row = sys.stdin.readline().splitlines()
         if row == ['']:
             continue
-        verts = row[0].split()
-        verts = map(int,verts)
-        moves = [(verts[0],y) for y in verts[1:]]
-        move_list.extend(moves)
+        append(map(int,row[0].split()))
         i += 1
 
     return move_list

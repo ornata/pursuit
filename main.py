@@ -2,9 +2,11 @@ import sys
 import networkx as nx
 #import matplotlib.pyplot as plt
 import read_graph as rg
+import cProfile
+import collections
 
 SHOW_MAT = False
-SHOW_STRATEGY = True
+SHOW_STRATEGY = False
 PLAY_GAME = False
 
 '''
@@ -40,19 +42,6 @@ def print_strategy(strategy):
         print ""
 
 '''
-find_legal_moves
------------------------------------------------------------------------------
-Returns a list of all of the positions current_pos can move to given a list of tuples (x,y).
-If x = current_pos, then append y to the list.
-'''
-def find_legal_moves(allowed_moves, current_pos):
-    legal = []
-    for x in allowed_moves:
-        if x[0] == current_pos:
-            legal.append(x[1])
-    return legal
-
-'''
 relabel
 -----------------------------------------------------------------------------
 Check if there is a way for the left player to get closer to winning the game
@@ -71,40 +60,33 @@ can't say anything about a guaranteed better strategy and so we can't update any
 
 Returns True if the position (left, right) was relabeled, False otherwise.
 '''
-def relabel(rel_mat, l, r, allowed_left, allowed_right):
+def relabel(rel_mat, l, r, allowed_left, allowed_right, label):
 
     # The current positions have already been labelled, so nothing can be updated.
-    if (rel_mat[l][r])[0] != sys.maxint:
+    if label != sys.maxint:
         return False
 
-    # Otherwise, look at all of the legal moves for left and right
-    nbrs_r = find_legal_moves(allowed_right, r)
-    nbrs_l = find_legal_moves(allowed_left, l)
-
-    # Set the i-th entry to true only if there is a move left can make to shorten the game.
-    was_countered = [False]*len(nbrs_r)
-    i = 0
-
-    label = rel_mat[l][r][0]
-    prev_label = sys.maxint
-    candidate_labels = [] # Candidates for relabeling
+    moves_countered = 0
+    candidate_labels = collections.deque() # Candidates for relabeling
+    append_candidate_label = candidate_labels.append # Avoid repeated evaluation of append
+    min_label = label
 
     # Try to update the current position using its neighbours.
-    for rmove in nbrs_r:
-        for lmove in nbrs_l:
+
+    for rmove in allowed_right[r]:
+        for lmove in allowed_left[l]:
             move_label = rel_mat[lmove][rmove][0]
             if move_label < label: # We were able to reach this state in fewer moves than the current one
-                candidate_labels.append(move_label+1)
-                was_countered[i] = True
+                append_candidate_label(move_label+1)
+                moves_countered +=1
                 break
-        i += 1
 
-    if(all(move == True for move in was_countered)):
-        rel_mat[l][r] = [min(candidate_labels), (l, r)]
-        return True
-    
-    else:
+    if moves_countered < len(allowed_right[r]):
         return False
+
+    rel_mat[l][r] = [min(candidate_labels), (l, r)]
+    return True
+
 
 
 '''
@@ -117,19 +99,17 @@ so we are done.
 Returns True when nothing was updated at this step, and False otherwise.
 '''
 def update_matrix(right, left, rel_mat, allowed_left, allowed_right):
-
     done = True
 
-    for i in range(0, len(left)):
-        for j in range(0, len(right)):
-            updated_entry = relabel(rel_mat, i, j, allowed_left, allowed_right) 
+    for i in xrange(0, len(left)):
+        for j in xrange(0, len(right)):
+            updated_entry = relabel(rel_mat, i, j, allowed_left, allowed_right, rel_mat[i][j][0]) 
             if updated_entry == True:
                 # Show current state of game
                 if(SHOW_MAT == True):
                     print "Updated an entry"
                     print_rel_mat(rel_mat)
                     print ""
-
                 done = False
     return done
 
@@ -145,8 +125,8 @@ left won.
 Returns a string stating the winner of the game.
 '''
 def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
-
     done = False
+
     while done == False:
         done = update_matrix(right, left, rel_mat, allowed_left, allowed_right)
 
@@ -172,12 +152,12 @@ def gen_left_strategy(rel_mat):
     k = len(rel_mat)
     m = len(rel_mat[0])
 
-    strategy = [[sys.maxint for j in range(m)] for i in range(k)]
+    strategy = [[sys.maxint for j in xrange(m)] for i in xrange(k)]
 
     minimum = sys.maxint #this is the minimum move found so far
 
-    for row in range(k):
-        for col in range(m):
+    for row in xrange(k):
+        for col in xrange(m):
             strategy[row][col] = rel_mat[row][col][0]
 
     if SHOW_STRATEGY == True:
@@ -204,10 +184,10 @@ def gen_right_strategy(rel_mat):
     k = len(rel_mat)
     m = len(rel_mat[0])
 
-    strategy = [[-1 for j in range(m)] for i in range(k)]
+    strategy = [[-1 for j in xrange(m)] for i in xrange(k)]
 
-    for row in range(k):
-        for col in range(m):
+    for row in xrange(k):
+        for col in xrange(m):
             # any move with a value of 0 would make right lose
             if(rel_mat[row][col][0] > 0):
                 strategy[row][col] = rel_mat[row][col][0]
@@ -287,7 +267,7 @@ Initialize the relation matrix for the game and return it.
 '''
 def init_relation_matrix(left, right, final_states):
     # Game info stored like [number of moves until win, (left_position, right_position)]
-    relation_matrix = [[[sys.maxint, (i, j)] for j in range(0, right)] for i in range(0, left)]
+    relation_matrix = [[[sys.maxint, (i, j)] for j in xrange(0, right)] for i in xrange(0, left)]
 
     # Initialize the relation matrix.
     for state in final_states:
@@ -336,6 +316,5 @@ def main():
 
         game = []
 
-
 if __name__ == "__main__":
-    main()
+    cProfile.run('main()')
