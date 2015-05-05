@@ -1,13 +1,10 @@
 import sys
 import networkx as nx
-#import matplotlib.pyplot as plt
 import read_graph as rg
-import cProfile
 import collections
+import copy
 
-SHOW_MAT = False
-SHOW_STRATEGY = False
-PLAY_GAME = False
+SHOW_MAT = False #show matrix updates
 
 '''
 print_rel_mat
@@ -15,49 +12,31 @@ print_rel_mat
 Formatted printing for relation matrix
 '''
 def print_rel_mat(mat):
-
-    for row in mat:
-        for column in row:
-            print " ",
-            if column[0] == sys.maxint:
-                print "----------",
-            else:
-                print column,
-            print " ",
+    for key, value in mat.iteritems():
         print ""
-
-'''
-print_strategy
------------------------------------------------------------------------------
-Formatted printing for strategies
-'''
-def print_strategy(strategy):
-    for row in strategy:
-        for x in row:
-            print " ",
-            if x == sys.maxint:
-                print "inf",
+        for elem in value:
+            if elem == sys.maxint:
+                print "-",
             else:
-                print "%3d" %(x),
-        print ""
+                print elem,
+    print ""
 
 '''
 relabel
 -----------------------------------------------------------------------------
 Check if there is a way for the left player to get closer to winning the game
 given any of the moves the right player could make from its current position.
-
 Given the current position (left, right)
+
 For any legal move the right player could make, check if there is a left move
 that has a smaller label than (left,right) in the relation matrix.If there is,
 then left can walk through that spot in one step, so it may be possible for it
 to shorten the game. If it is possible to do that for every single move the right
 player can make, then no matter what, left can do better so we can update its label.
-We choose the smallest possible label out of each "better" play left could make.
 
+Choose the smallest possible label out of each "better" play left could make.
 If it is not possible for left to shorten the game no matter what right does, we
 can't say anything about a guaranteed better strategy and so we can't update anything.
-
 Returns True if the position (left, right) was relabeled, False otherwise.
 '''
 def relabel(rel_mat, l, r, allowed_left, allowed_right, label):
@@ -71,20 +50,39 @@ def relabel(rel_mat, l, r, allowed_left, allowed_right, label):
     append_candidate_label = candidate_labels.append # Avoid repeated evaluation of append
     min_label = label
 
-    # Try to update the current position using its neighbours.
+    # Which moves can each of the left players make?
+    legal_left = set()
+    legal_right = allowed_right[r][1:]
 
-    for rmove in allowed_right[r]:
-        for lmove in allowed_left[l]:
-            move_label = rel_mat[lmove][rmove][0]
-            if move_label < label: # We were able to reach this state in fewer moves than the current one
-                append_candidate_label(move_label+1)
-                moves_countered +=1
-                break
-
-    if moves_countered < len(allowed_right[r]):
+    # Right can't legally make a move anymore -- if we can move here, we can win
+    if len(legal_right) == 0:
         return False
 
-    rel_mat[l][r] = [min(candidate_labels), (l, r)]
+
+    for legal in allowed_left:
+        for i in range(0, len(l)):
+            if l[i] == legal[0]: # i-th left player can move to some spot
+                # Add each of the possible moves:
+                for move in legal[1:]:
+                    new_pos = list(l)
+                    new_pos[i] = move
+                    legal_left.add(tuple(new_pos))
+
+    if len(legal_left) == 0:
+        return False
+
+    # Try to counter every move the right player could make
+    for right_move in legal_right:
+        for left_move in legal_left:
+            if rel_mat[left_move][right_move] < label:
+                    append_candidate_label(rel_mat[left_move][right_move]+1)
+                    moves_countered += 1
+                    break
+
+    if moves_countered < len(allowed_right[r])-1:
+        return False
+
+    rel_mat[l][r] = min(candidate_labels)
     return True
 
 
@@ -101,9 +99,12 @@ Returns True when nothing was updated at this step, and False otherwise.
 def update_matrix(right, left, rel_mat, allowed_left, allowed_right):
     done = True
 
+    lnodes = left.nodes()
+    rnodes = right.nodes()
     for i in xrange(0, len(left)):
         for j in xrange(0, len(right)):
-            updated_entry = relabel(rel_mat, i, j, allowed_left, allowed_right, rel_mat[i][j][0]) 
+            #print rel_mat[lnodes[i]][rnodes[j]]
+            updated_entry = relabel(rel_mat, lnodes[i], rnodes[j], allowed_left, allowed_right, rel_mat[lnodes[i]][rnodes[j]]) 
             if updated_entry == True:
                 # Show current state of game
                 if(SHOW_MAT == True):
@@ -112,7 +113,6 @@ def update_matrix(right, left, rel_mat, allowed_left, allowed_right):
                     print ""
                 done = False
     return done
-
 
 '''
 fill_matrix
@@ -130,10 +130,9 @@ def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
     while done == False:
         done = update_matrix(right, left, rel_mat, allowed_left, allowed_right)
 
-    for row in rel_mat:
-        for i in row:
-            # We failed to fill the matrix so right wins
-            if sys.maxint in i:
+    for key, value in rel_mat.iteritems():
+        for entry in value:
+            if sys.maxint == entry:
                 return "Right"
 
     # There are no unlabelled rows.
@@ -141,140 +140,46 @@ def fill_matrix(left, right, rel_mat, allowed_left, allowed_right):
 
 
 '''
-gen_left_strategy
+update_nodes
 -----------------------------------------------------------------------------
-Generate the strategy that left will follow if we play the game.
-This is all of the values from the relation matrix with rows
-representing the position of left and columns representing the
-position of right.
+Helper function for flattening out the tuples that result from taking the
+categorical product.
 '''
-def gen_left_strategy(rel_mat):
-    k = len(rel_mat)
-    m = len(rel_mat[0])
+def update_nodes(node, new_node, append_to_new_node):
+    if type(node) is not tuple:
+        append_to_new_node(node)
+        return new_node
 
-    strategy = [[sys.maxint for j in xrange(m)] for i in xrange(k)]
+    for entry in node:
+        if type(entry) is tuple:
+            update_nodes(entry, new_node)
+        else:
+            append_to_new_node(entry)
 
-    minimum = sys.maxint #this is the minimum move found so far
-
-    for row in xrange(k):
-        for col in xrange(m):
-            strategy[row][col] = rel_mat[row][col][0]
-
-    if SHOW_STRATEGY == True:
-        print "Left's strategy"
-        print_strategy(strategy)
-    return strategy
-
-
+    return new_node
+         
 '''
-gen_right_strategy
+get_nbrs
 -----------------------------------------------------------------------------
-If the winner is right, generate a matrix containing right's winning
-strategy.
+Helper function for finding Right's winning strategy.
+'''       
+def get_nbrs(row, parent_list, relation_matrix, allowed, updated, count, append_to_updated):
+    if len(parent_list) == 0:
+        return
+    nbrs = collections.deque()
+    append_to_nbrs = nbrs.append
 
-Rows: position of left
-Cols: position of right
+    for i in range(0, len(allowed)):
+        for j in range(0, len(allowed[i])):
+            if allowed[i][j] in parent_list and i not in updated:
+                append_to_nbrs(i)
+                append_to_updated(i)
+                row[i] = count
 
-Any move that would cause right to lose is labelled -1.
-Otherwise, put in the value from the relation matrix.
+    if len(set(nbrs)) == 0:
+        return
 
-Rows are left's position, columns are rights position.
-'''
-def gen_right_strategy(rel_mat):
-    k = len(rel_mat)
-    m = len(rel_mat[0])
-
-    strategy = [[-1 for j in xrange(m)] for i in xrange(k)]
-
-    for row in xrange(k):
-        for col in xrange(m):
-            # any move with a value of 0 would make right lose
-            if(rel_mat[row][col][0] > 0):
-                strategy[row][col] = rel_mat[row][col][0]
-
-    if SHOW_STRATEGY == True:
-        print "Right's strategy"
-        print_strategy(strategy)
-
-    return strategy
-
-
-'''
-play_game
------------------------------------------------------------------------------
-Play the game to find the winning strategy for left/right
-Left moves first, then right moves.
-'''
-def play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right):
-    left = start_left
-    right = start_right
-    nmoves = -1
-
-    print "\n Play the game \n"
-    print "Starting position:"
-
-    nmoves = left_strategy[left][right]
-
-    print (left,right)
-
-    print "Left's allowed moves"
-    print allowed_left
-
-    print "Right's allowed moves"
-    print allowed_right
-
-    while True:
-        if nmoves == sys.maxint or nmoves == 0:
-            break
-
-        best_move = left
-
-        for move in allowed_left:
-            if move[0] == left and left_strategy[move[1]][right] < left_strategy[best_move][right]:
-                    best_move = move[1]
-
-        left = best_move
-
-        nmoves = left_strategy[left][right]
-
-        print "Left moves to %d" %(left)
-        print (left,right)
-        print "Number of moves until left can win: %d" %(nmoves)
-        print ""
-
-        if nmoves == sys.maxint or nmoves == 0:
-            break
-
-        best_move = right
-
-        for move in allowed_right:
-            if move[0] == right and right_strategy[left][move[1]] > right_strategy[left][best_move]:
-                    best_move = move[1]
-        
-        right = best_move
-        nmoves = right_strategy[left][right]
-
-        print "Right moves to %d" %(right)
-        print (left,right)
-        print "Number of moves until left can win: %d" %(nmoves)
-        print ""
-
-
-'''
-init_relation_matrix
------------------------------------------------------------------------------
-Initialize the relation matrix for the game and return it.
-'''
-def init_relation_matrix(left, right, final_states):
-    # Game info stored like [number of moves until win, (left_position, right_position)]
-    relation_matrix = [[[sys.maxint, (i, j)] for j in xrange(0, right)] for i in xrange(0, left)]
-
-    # Initialize the relation matrix.
-    for state in final_states:
-        l_pos = state[0]
-        r_pos = state[1]
-        (relation_matrix[l_pos][r_pos])[0] = 0
-    return relation_matrix
+    get_nbrs(row, set(nbrs), relation_matrix, allowed, updated, count+1, append_to_updated)
 
 '''
 main
@@ -300,21 +205,92 @@ def main():
         start_left = game[5]
         start_right = game[6]
 
-        relation_matrix = init_relation_matrix(len(left), len(right), final_states)
+        k = 1 # number of left players
+        lgraph = left
 
-        # Run the game, record the winner.
+        # Take the k-fold categorical product of the graph
+        for i in range(1,k):
+            lgraph = nx.tensor_product(lgraph,left)
+        left = lgraph
+
+        # Workaround for networkx's built-in categorical product
+        new_labels = {}
+        for n in left.nodes():
+            new = collections.deque()
+            append_to_new = new.append
+            update_nodes(n, new, append_to_new)
+            new_labels[n] = tuple(new)
+
+        nx.relabel_nodes(left, new_labels, copy=False)
+
+        # Put allowed_right in a format that makes sense. a list of (current pos, next pos)
+        rmoves = collections.deque()
+        append_to_rmoves = rmoves.append
+        for move in allowed_right:
+            x = move[0]
+            for m2 in move[1:]:
+                y = m2
+                append_to_rmoves([(x,y), sys.maxint])
+
+        # Construct a dictionary with left's position(s) as keys, right's as values
+        relation_matrix = {}
+        for v in left.nodes():
+            relation_matrix[v] = [sys.maxint] * len(right)
+
+        # Initialize the dict with 0's at every final state
+        # when do we have a final stat
+        for key, value in relation_matrix.iteritems():
+            for f in final_states:
+                if f[0] in key: # there is a left player matching the position
+                    for i in range(0, len(value)):
+                        if i == f[1]:
+                            value[i] = 0
+
+        #Run the game, record the winner.
         winner = fill_matrix(left, right, relation_matrix, allowed_left, allowed_right)
         print "\nWinner: %s \n" %(winner)
 
-        # Find the strategies that left and right will try and follow to win the game
-        left_strategy = gen_left_strategy(relation_matrix)
-        right_strategy = gen_right_strategy(relation_matrix)
+        strategy = collections.OrderedDict(sorted(relation_matrix.items(), key = lambda t: t[0]))
 
-        # If the flag is set, show how left (or right) would win the game given start_left and start_right
-        if PLAY_GAME == True:
-            play_game(left_strategy, right_strategy, start_left, start_right, allowed_left, allowed_right)
+        # Left's strategy: How many moves would it take for left to get to a node labelled 0?
+        if winner == 'Left':
+            for key, value in strategy.iteritems():
+                print key,
+                for entry in value:
+                    print entry,
+                print ""
+
+        # Right's strategy: How many moves would it take for right to get to a node labelled sys.maxint?
+        if winner == 'Right':
+            updated = collections.deque()
+            append_to_updated = updated.append
+            for key, value in strategy.iteritems():
+                row = [0]*right.number_of_nodes() # best case: 0 moves
+                for i in range(0, len(value)):
+                    if value[i] == 0: # right would lose at this point
+                        append_to_updated(i)
+                        row[i] = -1
+
+                    if value[i] == sys.maxint: # right would win here
+                        append_to_updated(i)
+                        row[i] = 0
+                        neighbours = collections.deque()
+                        append_to_neighbours = neighbours.append
+
+                        # recursively relabel each of the nodes which have a move leaving into i
+                        for j in range(0, len(allowed_right)):
+                            for k in range(0, len(allowed_right[j])):
+                                if allowed_right[j][k] == i:
+                                    append_to_neighbours(j)
+                        get_nbrs(row, set(neighbours), relation_matrix, allowed_right, updated, 1, append_to_updated)
+
+                # print out the labels
+                print key,
+                for entry in row:
+                    print entry,
+                print ""
 
         game = []
 
 if __name__ == "__main__":
-    cProfile.run('main()')
+    main()
